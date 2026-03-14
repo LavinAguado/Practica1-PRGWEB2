@@ -3,7 +3,10 @@
   import { user, logout } from '../stores/auth.js';
   import { cart } from '../stores/cart.js';
 
+  // $derived() – computed values from reactive state
   let totalItems = $derived($cart.reduce((sum, item) => sum + item.quantity, 0));
+  let userDisplayName = $derived($user?.username ?? 'Usuario');
+  let isAdmin = $derived($user?.role === 'admin');
 
   function handleLogout() {
     logout();
@@ -17,6 +20,7 @@
   </div>
   <div class="nav-links">
     {#if $user}
+      <span class="user-greeting">Hola, <strong>{userDisplayName}</strong>{#if isAdmin} <span class="role-tag">ADMIN</span>{/if}</span>
       <button 
         class="nav-link {$currentRoute === 'products' ? 'active' : ''}" 
         onclick={() => navigate('products')}
@@ -116,6 +120,28 @@
   .logout-btn:hover {
     background: rgba(255, 71, 87, 0.1);
     color: #ff4757;
+  }
+
+  .user-greeting {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0 0.5rem;
+  }
+  .user-greeting strong {
+    color: var(--text-color);
+  }
+
+  .role-tag {
+    background: rgba(255, 71, 87, 0.15);
+    color: #ff4757;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
   }
 
   @media (max-width: 600px) {

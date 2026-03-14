@@ -1,52 +1,73 @@
 <script>
-  import { onMount } from 'svelte';
-  import { api } from '../services/api.js';
-  import { user } from '../stores/auth.js';
-  import { addToCart } from '../stores/cart.js';
+  import { onMount } from "svelte";
+  import { api } from "../services/api.js";
+  import { user } from "../stores/auth.js";
+  import { addToCart } from "../stores/cart.js";
+  import ProductCard from "../components/ProductCard.svelte";
+  import ProductForm from "../components/ProductForm.svelte";
 
+  // --- $state() for main application state ---
   let products = $state([]);
   let loading = $state(true);
-  let errorMsg = $state('');
+  let errorMsg = $state("");
+  let searchTerm = $state("");
 
-  // Estados de Modales
-  let showCreateModal = $state(false);
+  // Modal state
+  let showForm = $state(false);
   let showDetailModal = $state(false);
   let selectedProduct = $state(null);
   let editingProductId = $state(null);
-
-  // Formulario de creación
   let formProduct = $state({
-    title: '',
-    description: '',
+    title: "",
+    description: "",
     price: 0,
     stock: 0,
-    image: ''
+    image: "",
   });
-  
-  // Estado local para cantidades seleccionadas de cada producto
+
+  // Quantity selectors per product
   let selectedQuantities = $state({});
+
+  // --- $derived() for computed/derived values ---
+  let filteredProducts = $derived(
+    searchTerm.trim() === ""
+      ? products
+      : products.filter(
+          (p) =>
+            p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.description?.toLowerCase().includes(searchTerm.toLowerCase()),
+        ),
+  );
+
+  let productCount = $derived(products.length);
+  let filteredCount = $derived(filteredProducts.length);
+  let isAdmin = $derived($user?.role === "admin");
+
+  // --- $effect() for side-effects ---
+  // Re-load products whenever the user role changes (e.g login/logout swap)
+  $effect(() => {
+    const role = $user?.role; // track the role
+    if ($user) {
+      loadProducts();
+    }
+  });
 
   async function loadProducts() {
     loading = true;
-    errorMsg = '';
+    errorMsg = "";
     try {
       products = await api.getProducts();
-      // Inicializar cantidades de selección
       let qs = {};
-      products.forEach(p => qs[p._id] = 1);
+      products.forEach((p) => (qs[p._id] = 1));
       selectedQuantities = qs;
     } catch (err) {
-      errorMsg = 'Error al cargar los productos: ' + err.message;
+      errorMsg = "Error al cargar los productos: " + err.message;
     } finally {
       loading = false;
     }
   }
 
-  onMount(() => {
-    loadProducts();
-  });
-
-  // Acciones
+  // -- Actions (passed as callbacks to children) --
   function openDetails(p) {
     selectedProduct = p;
     showDetailModal = true;
@@ -59,46 +80,58 @@
 
   function openCreate() {
     editingProductId = null;
-    formProduct = { title: '', description: '', price: 0, stock: 0, image: '' };
-    showCreateModal = true;
+    formProduct = { title: "", description: "", price: 0, stock: 0, image: "" };
+    showForm = true;
   }
 
   function openEdit(p) {
     editingProductId = p._id;
-    formProduct = { title: p.title, description: p.description, price: p.price, stock: p.stock, image: p.image || '' };
-    showCreateModal = true;
+    formProduct = {
+      title: p.title,
+      description: p.description,
+      price: p.price,
+      stock: p.stock,
+      image: p.image || "",
+    };
+    showForm = true;
   }
 
-  function closeCreate() {
-    showCreateModal = false;
+  function closeForm() {
+    showForm = false;
     editingProductId = null;
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function handleSave(data) {
     try {
       if (editingProductId) {
-        const updated = await api.updateProduct(editingProductId, formProduct);
-        products = products.map(p => p._id === editingProductId ? updated : p);
-        if (selectedProduct?._id === editingProductId) selectedProduct = updated;
+        const updated = await api.updateProduct(editingProductId, data);
+        products = products.map((p) =>
+          p._id === editingProductId ? updated : p,
+        );
+        if (selectedProduct?._id === editingProductId)
+          selectedProduct = updated;
       } else {
-        const created = await api.createProduct(formProduct);
+        const created = await api.createProduct(data);
         products = [created, ...products];
         selectedQuantities[created._id] = 1;
       }
-      closeCreate();
+      closeForm();
     } catch (err) {
-      alert('Error guardando: ' + err.message);
+      alert("Error guardando: " + err.message);
     }
   }
 
   async function handleDelete(id) {
-    if (!confirm('¿Seguro que deseas eliminar este producto?')) return;
+    if (!confirm("¿Seguro que deseas eliminar este producto?")) return;
     try {
       await api.deleteProduct(id);
-      products = products.filter(p => p._id !== id);
+      products = products.filter((p) => p._id !== id);
+      // También lo eliminamos de las cantidades seleccionadas
+      delete selectedQuantities[id];
+      selectedQuantities = { ...selectedQuantities };
     } catch (err) {
-      alert('Error borrando: ' + err.message);
+      console.error("Error borrando producto:", err);
+      alert("Error borrando: " + err.message);
     }
   }
 
@@ -113,69 +146,56 @@
   function handleAddToCart(p) {
     const qty = selectedQuantities[p._id];
     addToCart(p, qty);
-    // feedback visual opcional aquí
   }
 </script>
 
 <div class="products-container">
   <div class="header">
-    <h1>Productos</h1>
-    {#if $user?.role === 'admin'}
-      <button class="btn btn-primary" onclick={openCreate}>
-        + Nuevo Producto
-      </button>
-    {/if}
+    <div>
+      <h1>Productos</h1>
+      <p class="product-count">{filteredCount} de {productCount} productos</p>
+    </div>
+    <div class="header-actions">
+      <input
+        type="text"
+        class="search-input"
+        placeholder="🔎 Buscar productos..."
+        bind:value={searchTerm}
+      />
+      {#if isAdmin}
+        <button class="btn btn-primary" onclick={openCreate}>
+          + Nuevo Producto
+        </button>
+      {/if}
+    </div>
   </div>
 
   {#if loading}
     <div class="loading">Cargando productos...</div>
   {:else if errorMsg}
     <div class="alert error">{errorMsg}</div>
-  {:else if products.length === 0}
-    <div class="empty-state">No hay productos disponibles por el momento.</div>
+  {:else if filteredProducts.length === 0}
+    <div class="empty-state">
+      {#if searchTerm}
+        No se encontraron productos para "{searchTerm}".
+      {:else}
+        No hay productos disponibles por el momento.
+      {/if}
+    </div>
   {:else}
     <div class="grid">
-      {#each products as p (p._id)}
-        <div class="card">
-          <div class="card-image">
-            {#if p.image}
-              <img src={p.image} alt={p.title} />
-            {:else}
-              <div class="img-placeholder">🛒</div>
-            {/if}
-          </div>
-          <div class="card-content">
-            <h3>{p.title}</h3>
-            <p class="price">${p.price}</p>
-            <span class="status {p.stock > 0 ? 'active' : 'inactive'}">
-              {p.stock > 0 ? `Stock: ${p.stock}` : 'Sin stock'}
-            </span>
-            
-            <div class="cart-controls" style="margin-top: 1rem;">
-              <div class="qty-select">
-                <button onclick={() => decQty(p._id)} disabled={p.stock === 0 || selectedQuantities[p._id] <= 1}>-</button>
-                <span>{selectedQuantities[p._id] || 1}</span>
-                <button onclick={() => incQty(p._id, p.stock)} disabled={p.stock === 0 || selectedQuantities[p._id] >= p.stock}>+</button>
-              </div>
-              <button 
-                class="btn btn-primary btn-sm" 
-                disabled={p.stock === 0} 
-                onclick={() => handleAddToCart(p)}
-                style="flex: 1"
-              >
-                Añadir
-              </button>
-            </div>
-            
-          </div>
-          <div class="card-actions">
-            <button class="btn btn-secondary" onclick={() => openDetails(p)}>Detalles</button>
-            {#if $user?.role === 'admin'}
-              <button class="btn btn-secondary" onclick={() => openEdit(p)}>Editar</button>
-              <button class="btn btn-danger" onclick={() => handleDelete(p._id)}>Borrar</button>
-            {/if}
-          </div>
-        </div>
+      {#each filteredProducts as p (p._id)}
+        <ProductCard
+          product={p}
+          quantity={selectedQuantities[p._id] || 1}
+          {isAdmin}
+          onDetails={openDetails}
+          onEdit={openEdit}
+          onDelete={handleDelete}
+          onIncQty={incQty}
+          onDecQty={decQty}
+          onAddToCart={handleAddToCart}
+        />
       {/each}
     </div>
   {/if}
@@ -183,15 +203,23 @@
 
 <!-- Modal Detalles -->
 {#if showDetailModal && selectedProduct}
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
   <div class="modal-backdrop" onclick={closeDetails}>
     <div class="modal-content" onclick={(e) => e.stopPropagation()}>
       <h2>Detalle del Producto</h2>
       {#if selectedProduct.image}
-        <img src={selectedProduct.image} alt={selectedProduct.title} class="modal-image" />
+        <img
+          src={selectedProduct.image}
+          alt={selectedProduct.title}
+          class="modal-image"
+        />
       {/if}
       <h3>{selectedProduct.title}</h3>
       <p class="modal-price">${selectedProduct.price}</p>
-      <p class="modal-desc">{selectedProduct.description || 'Sin descripción'}</p>
+      <p class="modal-desc">
+        {selectedProduct.description || "Sin descripción"}
+      </p>
       <p class="modal-stock">Stock: {selectedProduct.stock}</p>
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick={closeDetails}>Cerrar</button>
@@ -200,40 +228,14 @@
   </div>
 {/if}
 
-<!-- Modal Creación / Edición -->
-{#if showCreateModal}
-  <div class="modal-backdrop" onclick={closeCreate}>
-    <div class="modal-content" onclick={(e) => e.stopPropagation()}>
-      <h2>{editingProductId ? 'Editar Producto' : 'Crear Nuevo Producto'}</h2>
-      <form onsubmit={handleSubmit}>
-        <div class="form-group">
-          <label>Título</label>
-          <input type="text" bind:value={formProduct.title} required />
-        </div>
-        <div class="form-group">
-          <label>Descripción</label>
-          <textarea bind:value={formProduct.description} rows="3" required></textarea>
-        </div>
-        <div class="form-group">
-          <label>Precio</label>
-          <input type="number" step="0.01" bind:value={formProduct.price} required />
-        </div>
-        <div class="form-group">
-          <label>Stock</label>
-          <input type="number" bind:value={formProduct.stock} required />
-        </div>
-        <div class="form-group">
-          <label>URL Imagen (opcional)</label>
-          <input type="url" bind:value={formProduct.image} />
-        </div>
-
-        <div class="modal-actions">
-          <button type="button" class="btn btn-secondary" onclick={closeCreate}>Cancelar</button>
-          <button type="submit" class="btn btn-primary">Guardar</button>
-        </div>
-      </form>
-    </div>
-  </div>
+<!-- Modal Creación / Edición via ProductForm component -->
+{#if showForm}
+  <ProductForm
+    product={formProduct}
+    isEditing={!!editingProductId}
+    onSave={handleSave}
+    onCancel={closeForm}
+  />
 {/if}
 
 <style>
@@ -246,13 +248,42 @@
   .header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
   }
 
   .header h1 {
     margin: 0;
     color: var(--primary-color);
+  }
+
+  .product-count {
+    margin: 0.3rem 0 0 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .search-input {
+    padding: 0.6rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--text-color);
+    font-size: 0.95rem;
+    width: 240px;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
   }
 
   .grid {
@@ -261,89 +292,8 @@
     gap: 1.5rem;
   }
 
-  .card {
-    background: var(--surface-color);
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    transition: transform 0.2s, box-shadow 0.2s;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-
-  .card-image {
-    height: 160px;
-    background: rgba(0,0,0,0.2);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-  }
-
-  .card-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .img-placeholder {
-    font-size: 3rem;
-    opacity: 0.5;
-  }
-
-  .card-content {
-    padding: 1.5rem;
-    flex-grow: 1;
-  }
-
-  .card-content h3 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.2rem;
-  }
-
-  .price {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--primary-color);
-    margin: 0 0 1rem 0;
-  }
-
-  .status {
-    display: inline-block;
-    padding: 0.2rem 0.6rem;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 600;
-  }
-
-  .status.active {
-    background: rgba(46, 213, 115, 0.1);
-    color: #2ed573;
-  }
-
-  .status.inactive {
-    background: rgba(255, 71, 87, 0.1);
-    color: #ff4757;
-  }
-
-  .card-actions {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .card-actions button {
-    flex: 1;
-  }
-
-  .loading, .empty-state {
+  .loading,
+  .empty-state {
     text-align: center;
     padding: 3rem;
     color: var(--text-muted);
@@ -358,11 +308,39 @@
     text-align: center;
   }
 
+  /* Detail modal styles */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-content {
+    background: var(--surface-color);
+    padding: 2rem;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-content h2 {
+    margin-top: 0;
+    color: var(--primary-color);
+  }
+
   .modal-image {
     width: 100%;
     height: 200px;
     object-fit: contain;
-    background: rgba(0,0,0,0.2);
+    background: rgba(0, 0, 0, 0.2);
     border-radius: 8px;
     margin-bottom: 1rem;
   }
@@ -383,36 +361,11 @@
   .modal-stock {
     font-weight: 600;
   }
-  
-  .cart-controls {
+
+  .modal-actions {
     display: flex;
+    justify-content: flex-end;
     gap: 0.5rem;
-    align-items: center;
-  }
-
-  .qty-select {
-    display: flex;
-    align-items: center;
-    background: rgba(0,0,0,0.2);
-    border-radius: 6px;
-    padding: 0.1rem;
-    border: 1px solid rgba(255,255,255,0.1);
-  }
-
-  .qty-select button {
-    background: none;
-    border: none;
-    color: var(--text-color);
-    width: 28px;
-    height: 28px;
-    cursor: pointer;
-  }
-  .qty-select button:disabled { opacity: 0.3; cursor: not-allowed; }
-  .qty-select button:hover:not(:disabled) { background: rgba(255,255,255,0.1); border-radius: 4px; }
-  .qty-select span { font-size: 0.9rem; min-width: 24px; text-align: center; }
-  
-  .btn-sm {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.85rem;
+    margin-top: 1rem;
   }
 </style>
