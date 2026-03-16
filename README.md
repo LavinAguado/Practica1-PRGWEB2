@@ -1,186 +1,114 @@
-# Práctica 1 / 2 – Portal de Productos con Pedidos y Roles
+# 🛒 Portal de Productos E-Commerce - Svelte 5
 
-## 📌 Resumen
-Aplicación web full‑stack que implementa un portal de productos con autenticación, carrito de compra y gestión de pedidos, cumpliendo los requisitos de la práctica.
+Este proyecto es una aplicación web full-stack (MEVN stack simplificado con Svelte) que implementa un portal de productos completo con autenticación JWT, gestión de roles, carrito de compras, chat en vivo y un panel de administración avanzado.
 
-Funcionalidades principales:
-- Registro y login con JWT.
-- Roles de usuario: `user` y `admin`.
-- CRUD de productos (solo admin).
-- Carrito de compra con persistencia en `localStorage`.
-- Creación de pedidos con control de stock.
-- Asociación de pedidos a usuarios.
-- Vista **Mis pedidos** para usuarios.
-- Vista **Gestión de pedidos** para administradores.
-- CRUD de usuarios (admin).
-- API GraphQL para pedidos.
-- Persistencia en MongoDB.
+## 🚀 Instalación y Ejecución
 
----
+### Requisitos Previos
+- Node.js (v18 o superior recomendado)
+- MongoDB corriendo localmente (puerto 27017) o una URI de MongoDB Atlas.
 
-## 🛠️ Tecnologías
-- **Backend**
-  - Node.js
-  - Express
-  - MongoDB + Mongoose
-  - JWT (`jsonwebtoken`)
-  - GraphQL (Apollo Server)
-
-- **Frontend**
-  - HTML
-  - CSS
-  - JavaScript Vanilla
-
----
-
-## ⚙️ Requisitos
-- Node.js >= 16
-- MongoDB en local o MongoDB Atlas
-
----
-
-## 🚀 Instalación y ejecución
-
-1. Clonar el repositorio:
+### 1. Configuración del Backend
+Desde la raíz del proyecto:
+1. Instala las dependencias:
    ```bash
-   git clone <url-del-repositorio>
+   npm install
+   ```
+2. Configura las variables de entorno:
+   Crea un archivo `.env` o edita `config.js` (si no usas .env):
+   ```env
+   PORT=4000
+   MONGO_URI=mongodb://localhost:27017/practica1
+   JWT_SECRET=tu_secreto_super_seguro
+   ```
+3. Inicia el servidor:
+   ```bash
+   npm run dev
+   ```
+   *El servidor correrá en [http://localhost:4000](http://localhost:4000)*
 
+### 2. Configuración del Frontend
+Desde la carpeta `client`:
+1. Instala las dependencias:
+   ```bash
+   cd client
+   npm install
+   ```
+2. Inicia el servidor de desarrollo:
+   ```bash
+   npm run dev
+   ```
+   *La aplicación estará disponible en [http://localhost:5173](http://localhost:5173)*
 
-## Instalación
-1. Clona el repositorio.
-2. `npm install`
-3. Copia `.env.example` a `.env` y configura `MONGO_URI` y `JWT_SECRET`.
-4. `npm run dev` (o `npm start`)
+---
 
-## Endpoints principales
-- `POST /api/auth/register` body: `{ username, email, password, role }`
-- `POST /api/auth/login` body: `{ email, password }`
-- `GET /api/products` (autenticado)
-- `POST /api/products` (admin)
-- `PUT /api/products/:id` (admin)
-- `DELETE /api/products/:id` (admin)
+## 🔑 Credenciales de Prueba (Demo)
 
-## Chat
-- Accede a `/chat.html` tras iniciar sesión.
-- Cliente Socket.IO envía token en handshake: `{ auth: { token } }`.
+Para probar los diferentes roles de la aplicación sin necesidad de registrarse:
 
-📦 Productos (CRUD)
-👑 Admin
+- **Administrador**:
+  - **Email**: `admin@admin.com`
+  - **Password**: `admin`
+- **Usuario Estándar**:
+  - **Email**: `prueba@prueba.com`
+  - **Password**: `user`
 
-    Crear productos.
+---
 
-    Editar productos.
+## ⚡ Svelte 5: Uso de Runas y APIs
 
-    Eliminar productos.
+Este proyecto hace un uso extensivo de las nuevas APIs de Svelte 5 para una reactividad más eficiente y un código más limpio.
 
-    Ver stock actualizado en tiempo real.
+### Runas Utilizadas
+- **`$state()`**: Utilizado para manejar el estado principal reactivo.
+  - *Ejemplos*: `products`, `loading`, `searchTerm`, `formProduct`, `selectedQuantities` en `Products.svelte`.
+- **`$derived()`**: Utilizado para valores que dependen de otros estados, optimizando los cálculos.
+  - *Ejemplos*: `filteredProducts`, `productCount`, `isAdmin`, `totalValue` (en el carrito) y `userDisplayName`.
+- **`$effect()`**: Manejo de efectos secundarios y sincronización.
+  - *Ejemplos*: Redirección automática si desaparece el token (Auth Guard en `App.svelte`), sincronización de datos al cambiar el rol del usuario, y restauración de sesión desde `localStorage`.
+- **`$props()`**: Definición declarativa de propiedades en componentes.
+  - *Ejemplos*: `ProductCard.svelte` y `ProductForm.svelte` reciben sus datos y callbacks mediante esta runa.
 
-👤 Usuario
+### Comunicación entre Componentes
+- Se han sustituido los eventos personalizados clásicos por el uso de **callbacks** pasados como props, siguiendo el patrón recomendado en Svelte 5.
+  - *Ejemplos*: `onSave`, `onEdit`, `onDelete`, `onAddToCart` son funciones pasadas desde `Products.svelte` a sus componentes hijos.
 
-    Ver listado de productos.
+---
 
-    Seleccionar cantidad antes de añadir al carrito.
+## 🛠️ Backend: Endpoints y Roles
 
-🛒 Carrito de compra
+El backend está construido con Express y ofrece una API REST para auth/productos/usuarios y GraphQL para pedidos.
 
-    Añadir productos con cantidad seleccionada.
+### Autenticación (`/api/auth`)
+- `POST /register`: Registro de nuevos usuarios.
+- `POST /login`: Inicio de sesión (devuelve JWT y datos del usuario).
 
-    Incrementar o reducir cantidades directamente desde el listado de productos.
+### Productos (`/api/products`)
+- `GET /`: Listar productos (Cualquier usuario autenticado).
+- `POST /`: Crear producto (**Solo Admin**).
+- `PUT /:id`: Editar producto (**Solo Admin**).
+- `DELETE /:id`: Eliminar producto (**Solo Admin**).
 
-    Persistencia del carrito usando localStorage.
+### Usuarios (`/api/users`)
+- `GET /`: Listar todos los usuarios (**Solo Admin**).
+- `PUT /:id/role`: Cambiar rol de un usuario (**Solo Admin**).
+- `DELETE /:id`: Eliminar usuario (**Solo Admin**).
 
-    Cálculo automático del importe total.
+### Pedidos (GraphQL - `/graphql`)
+- **Mutations**: `createOrder(items)` -> Crea un pedido restando stock.
+- **Queries**: `myOrders` -> Lista pedidos del usuario. `orders` (**Solo Admin**) -> Lista todos los pedidos.
 
-    Vaciado automático del carrito tras realizar un pedido correctamente.
+---
 
-📑 Pedidos
-🧾 Creación de pedidos
+## ✨ Funcionalidades Avanzadas Implementadas
 
-    El pedido se realiza desde el carrito.
-
-    Control de stock en backend.
-
-    El stock se descuenta al confirmar el pedido.
-
-    El pedido queda asociado al usuario autenticado.
-
-🔄 Estados del pedido
-
-    PENDING
-
-    PAID
-
-    CANCELLED (según implementación)
-
-👤 Vista "Mis pedidos" (Usuarios)
-
-    Muestra únicamente los pedidos del usuario autenticado.
-
-    Información mostrada:
-
-        Productos
-
-        Cantidades
-
-        Total del pedido
-
-        Estado
-
-        Fecha de creación
-
-🛠️ Vista Admin de pedidos
-
-    Listado completo de todos los pedidos.
-
-    Filtro por estado del pedido.
-
-    Información detallada:
-
-        Usuario
-
-        Productos
-
-        Total
-
-        Estado
-
-    Posibilidad de actualizar el estado del pedido.
-
-👥 Gestión de usuarios (Admin)
-
-    Listar usuarios.
-
-    Crear usuarios.
-
-    Editar usuarios.
-
-    Eliminar usuarios.
-
-    Cambio de rol (user / admin).
-
-🔗 GraphQL
-📌 Queries principales
-
-    orders → Obtener todos los pedidos (solo admin).
-
-    ordersByStatus(status) → Pedidos filtrados por estado (solo admin).
-
-    myOrders → Pedidos del usuario autenticado.
-
-✏️ Mutations principales
-
-    createOrder(items)
-
-    updateOrderStatus(id, status)
-
-    CRUD completo de usuarios (solo admin).
-## Notas y decisiones
-- Se ha mantenido el almacenamiento del chat en memoria (no persistente) para la versión básica — ampliación opcional: persistir mensajes en MongoDB.
-- Se permite asignar `admin` en registro (para pruebas). En un contexto real, la creación de admins debe estar controlada.
-- Interfaz minimalista: se puede mejorar con frameworks o subida de imágenes.
-
-## Evaluación
-- Autenticación JWT: implementada.
-- Roles: implementados y comprobados en rutas.
-- CRUD: operativo, usa Mongoose.
-- Chat: funcional con Socket.IO y token de autenticación.
+1. **Gestión de Roles**: Panel de administración completo para gestionar usuarios.
+2. **Persistencia de Sesión**: Los datos del usuario y el JWT persisten en `localStorage`.
+3. **Filtros Avanzados**: Buscador por nombre y filtrado por rango de precios reactivo.
+4. **Validación de Formularios**: Control de errores en tiempo real y feedback visual.
+5. **UX Mejorada**: 
+   - Sistema de **Notificaciones Toast** global.
+   - **Spinners de carga** profesionales.
+   - **Flujo de Registro**: Alternancia entre Login y Registro en la misma vista, con validación de contraseñas y asignación automática de rol `user`.
+   - Confirmación de acciones destructivas.
+   - Chat interactivo con respuestas automáticas (Bot).

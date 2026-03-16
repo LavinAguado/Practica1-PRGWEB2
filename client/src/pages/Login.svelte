@@ -2,40 +2,77 @@
   import { api } from '../services/api.js';
   import { login } from '../stores/auth.js';
   import { navigate } from '../stores/router.js';
+  import { showToast } from '../stores/toast.js';
 
+  let isLogin = $state(true);
+  let username = $state('');
   let email = $state('');
   let password = $state('');
+  let confirmPassword = $state('');
   let errorMsg = $state('');
   let loading = $state(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
     errorMsg = '';
+    
+    if (!isLogin && password !== confirmPassword) {
+      errorMsg = 'Las contraseñas no coinciden';
+      return;
+    }
+
     loading = true;
     try {
-      const data = await api.login(email, password);
-      // data: { token, user: { id, username, role } }
-      login(data.token, data.user);
-      navigate('products');
+      if (isLogin) {
+        const data = await api.login(email, password);
+        login(data.token, data.user);
+        showToast(`Bienvenido de nuevo, ${data.user.username}`, 'success');
+        navigate('products');
+      } else {
+        const data = await api.register(username, email, password);
+        login(data.token, data.user);
+        showToast('Cuenta creada con éxito. ¡Bienvenido!', 'success');
+        navigate('products');
+      }
     } catch (err) {
-      errorMsg = err.message || 'Error en el login';
+      errorMsg = err.message || (isLogin ? 'Error en el login' : 'Error en el registro');
     } finally {
       loading = false;
     }
+  }
+
+  function toggleMode() {
+    isLogin = !isLogin;
+    errorMsg = '';
   }
 </script>
 
 <div class="login-container">
   <div class="login-card">
-    <div class="logo">🔐</div>
-    <h1>Bienvenido</h1>
-    <p class="subtitle">Ingresa a tu cuenta para continuar</p>
+    <div class="logo">{isLogin ? '🔐' : '📝'}</div>
+    <h1>{isLogin ? 'Bienvenido' : 'Crear Cuenta'}</h1>
+    <p class="subtitle">
+      {isLogin ? 'Ingresa a tu cuenta para continuar' : 'Regístrate para empezar a comprar'}
+    </p>
 
     {#if errorMsg}
       <div class="alert error">{errorMsg}</div>
     {/if}
 
     <form onsubmit={handleSubmit}>
+      {#if !isLogin}
+        <div class="form-group">
+          <label for="username">Nombre de usuario</label>
+          <input 
+            id="username" 
+            type="text" 
+            bind:value={username} 
+            required 
+            placeholder="Usuario123"
+          />
+        </div>
+      {/if}
+
       <div class="form-group">
         <label for="email">Email</label>
         <input 
@@ -43,7 +80,7 @@
           type="email" 
           bind:value={email} 
           required 
-          placeholder="admin@example.com"
+          placeholder="email@ejemplo.com"
         />
       </div>
       
@@ -58,14 +95,34 @@
         />
       </div>
 
+      {#if !isLogin}
+        <div class="form-group">
+          <label for="confirmPassword">Confirmar Contraseña</label>
+          <input 
+            id="confirmPassword" 
+            type="password" 
+            bind:value={confirmPassword} 
+            required 
+            placeholder="••••••••"
+          />
+        </div>
+      {/if}
+
       <button type="submit" disabled={loading} class="btn-primary">
         {#if loading}
-          <span class="spinner"></span> Iniciando...
+          <span class="spinner"></span> {isLogin ? 'Iniciando...' : 'Creando cuenta...'}
         {:else}
-          Iniciar Sesión
+          {isLogin ? 'Iniciar Sesión' : 'Registrarse'}
         {/if}
       </button>
     </form>
+
+    <div class="toggle-mode">
+      <span>{isLogin ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}</span>
+      <button class="link-btn" onclick={toggleMode}>
+        {isLogin ? 'Regístrate aquí' : 'Inicia sesión'}
+      </button>
+    </div>
   </div>
 </div>
 
@@ -185,5 +242,30 @@
 
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+
+  .toggle-mode {
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .link-btn {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0;
+    transition: filter 0.2s;
+  }
+
+  .link-btn:hover {
+    filter: brightness(1.2);
+    text-decoration: underline;
   }
 </style>

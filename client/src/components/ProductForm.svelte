@@ -13,6 +13,8 @@
   let price = $state(0);
   let stock = $state(0);
   let image = $state('');
+  let saving = $state(false);
+  let errorMsg = $state('');
 
   // $effect() – syncs form state whenever the `product` prop changes
   $effect(() => {
@@ -21,52 +23,74 @@
     price = product.price;
     stock = product.stock;
     image = product.image || '';
+    errorMsg = '';
   });
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    onSave({ title, description, price: Number(price), stock: Number(stock), image });
+    if (price < 0 || stock < 0) {
+      errorMsg = 'El precio y el stock deben ser positivos';
+      return;
+    }
+    
+    saving = true;
+    errorMsg = '';
+    try {
+      await onSave({ title, description, price: Number(price), stock: Number(stock), image });
+    } catch (err) {
+      errorMsg = err.message;
+    } finally {
+      saving = false;
+    }
   }
 
   function handleKeydown(e) {
-    if (e.key === 'Escape') onCancel();
+    if (e.key === 'Escape' && !saving) onCancel();
   }
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <!-- svelte-ignore a11y_click_events_have_key_events -->
-<div class="modal-backdrop" onclick={onCancel} onkeydown={handleKeydown}>
+<div class="modal-backdrop" onclick={() => !saving && onCancel()} onkeydown={handleKeydown}>
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={() => {}}>
 
     <h2>{isEditing ? 'Editar Producto' : 'Crear Nuevo Producto'}</h2>
+    
+    {#if errorMsg}
+      <div class="form-error">{errorMsg}</div>
+    {/if}
+
     <form onsubmit={handleSubmit}>
       <div class="form-group">
         <label for="pf-title">Título</label>
-        <input id="pf-title" type="text" bind:value={title} required />
+        <input id="pf-title" type="text" bind:value={title} required disabled={saving} />
       </div>
       <div class="form-group">
         <label for="pf-desc">Descripción</label>
-        <textarea id="pf-desc" bind:value={description} rows="3" required></textarea>
+        <textarea id="pf-desc" bind:value={description} rows="3" required disabled={saving}></textarea>
       </div>
       <div class="form-group">
         <label for="pf-price">Precio</label>
-        <input id="pf-price" type="number" step="0.01" bind:value={price} required />
+        <input id="pf-price" type="number" step="0.01" min="0" bind:value={price} required disabled={saving} />
       </div>
       <div class="form-group">
         <label for="pf-stock">Stock</label>
-        <input id="pf-stock" type="number" bind:value={stock} required />
+        <input id="pf-stock" type="number" min="0" bind:value={stock} required disabled={saving} />
       </div>
       <div class="form-group">
         <label for="pf-image">URL Imagen (opcional)</label>
-        <input id="pf-image" type="url" bind:value={image} />
+        <input id="pf-image" type="url" bind:value={image} disabled={saving} />
       </div>
 
       <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" onclick={onCancel}>Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar</button>
+        <button type="button" class="btn btn-secondary" onclick={onCancel} disabled={saving}>Cancelar</button>
+        <button type="submit" class="btn btn-primary" disabled={saving}>
+          {saving ? 'Guardando...' : 'Guardar'}
+        </button>
       </div>
     </form>
+
   </div>
 </div>
 

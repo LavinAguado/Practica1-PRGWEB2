@@ -50,13 +50,13 @@
           <div class="cart-item">
             <div class="item-info">
               {#if item.image}
-                <img src={item.image} alt={item.title} />
+                <img src={item.image} alt={item.title} onerror={() => item.image = ''} />
               {:else}
                 <div class="img-placeholder">📦</div>
               {/if}
               <div>
                 <h3>{item.title}</h3>
-                <p class="price">${item.price.toFixed(2)}</p>
+                <p class="price">{item.price.toFixed(2)} €</p>
               </div>
             </div>
             
@@ -72,7 +72,7 @@
                 >+</button>
               </div>
               
-              <p class="item-total">${(item.price * item.quantity).toFixed(2)}</p>
+              <p class="item-total">{(item.price * item.quantity).toFixed(2)} €</p>
               
               <button 
                 class="btn-icon danger" 
@@ -90,12 +90,12 @@
         <h2>Resumen del Pedido</h2>
         <div class="summary-row">
           <span>Artículos ({$cart.reduce((s, i) => s + i.quantity, 0)}):</span>
-          <span>${totalValue.toFixed(2)}</span>
+          <span>{totalValue.toFixed(2)} €</span>
         </div>
         <hr />
         <div class="summary-row total">
           <span>Total:</span>
-          <span>${totalValue.toFixed(2)}</span>
+          <span>{totalValue.toFixed(2)} €</span>
         </div>
         
         <button 

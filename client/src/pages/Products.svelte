@@ -3,6 +3,7 @@
   import { api } from "../services/api.js";
   import { user } from "../stores/auth.js";
   import { addToCart } from "../stores/cart.js";
+  import { showToast } from "../stores/toast.js";
   import ProductCard from "../components/ProductCard.svelte";
   import ProductForm from "../components/ProductForm.svelte";
 
@@ -11,6 +12,8 @@
   let loading = $state(true);
   let errorMsg = $state("");
   let searchTerm = $state("");
+  let minPrice = $state(0);
+  let maxPrice = $state(1000);
 
   // Modal state
   let showForm = $state(false);
@@ -110,14 +113,16 @@
         );
         if (selectedProduct?._id === editingProductId)
           selectedProduct = updated;
+        showToast("Producto actualizado", "success");
       } else {
         const created = await api.createProduct(data);
         products = [created, ...products];
         selectedQuantities[created._id] = 1;
+        showToast("Producto creado", "success");
       }
       closeForm();
     } catch (err) {
-      alert("Error guardando: " + err.message);
+      showToast(err.message, "error");
     }
   }
 
@@ -129,9 +134,10 @@
       // También lo eliminamos de las cantidades seleccionadas
       delete selectedQuantities[id];
       selectedQuantities = { ...selectedQuantities };
+      showToast("Producto eliminado", "success");
     } catch (err) {
       console.error("Error borrando producto:", err);
-      alert("Error borrando: " + err.message);
+      showToast(err.message, "error");
     }
   }
 
@@ -156,12 +162,20 @@
       <p class="product-count">{filteredCount} de {productCount} productos</p>
     </div>
     <div class="header-actions">
-      <input
-        type="text"
-        class="search-input"
-        placeholder="🔎 Buscar productos..."
-        bind:value={searchTerm}
-      />
+      <div class="filters">
+        <div class="filter-group">
+          <span>Rango de precio:</span>
+          <input type="number" bind:value={minPrice} placeholder="Min" class="price-input" />
+          <span>-</span>
+          <input type="number" bind:value={maxPrice} placeholder="Max" class="price-input" />
+        </div>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="🔎 Buscar..."
+          bind:value={searchTerm}
+        />
+      </div>
       {#if isAdmin}
         <button class="btn btn-primary" onclick={openCreate}>
           + Nuevo Producto
@@ -171,7 +185,10 @@
   </div>
 
   {#if loading}
-    <div class="loading">Cargando productos...</div>
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Buscando los mejores productos...</p>
+    </div>
   {:else if errorMsg}
     <div class="alert error">{errorMsg}</div>
   {:else if filteredProducts.length === 0}
@@ -213,10 +230,11 @@
           src={selectedProduct.image}
           alt={selectedProduct.title}
           class="modal-image"
+          onerror={() => selectedProduct.image = ''}
         />
       {/if}
       <h3>{selectedProduct.title}</h3>
-      <p class="modal-price">${selectedProduct.price}</p>
+      <p class="modal-price">{selectedProduct.price} €</p>
       <p class="modal-desc">
         {selectedProduct.description || "Sin descripción"}
       </p>
@@ -267,23 +285,52 @@
 
   .header-actions {
     display: flex;
-    gap: 0.75rem;
+    gap: 1rem;
     align-items: center;
   }
 
+  .filters {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .price-input {
+    width: 60px;
+    padding: 0.4rem;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: var(--text-color);
+    font-size: 0.85rem;
+  }
+
   .search-input {
-    padding: 0.6rem 1rem;
+    padding: 0.5rem 1rem;
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.2);
     color: var(--text-color);
-    font-size: 0.95rem;
-    width: 240px;
-    transition: border-color 0.2s;
+    font-size: 0.9rem;
+    width: 180px;
+    transition: all 0.2s;
   }
   .search-input:focus {
     outline: none;
     border-color: var(--primary-color);
+    width: 220px;
   }
 
   .grid {
@@ -292,12 +339,27 @@
     gap: 1.5rem;
   }
 
-  .loading,
-  .empty-state {
-    text-align: center;
-    padding: 3rem;
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 5rem;
     color: var(--text-muted);
-    font-size: 1.2rem;
+  }
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255, 255, 255, 0.1);
+    border-top: 5px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1.5rem;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 
   .alert.error {

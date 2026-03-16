@@ -22,6 +22,7 @@ async function authFetch(endpoint, options = {}, isAbsolute = false) {
   });
 
   if (response.status === 401 || response.status === 403) {
+    import('../stores/toast.js').then(m => m.showToast('Sesión expirada o no autorizada', 'error'));
     logout();
     throw new Error('Sesión expirada o no autorizada');
   }
@@ -49,6 +50,10 @@ export const api = {
   login: (email, password) => authFetch('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password })
+  }),
+  register: (username, email, password) => authFetch('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ username, email, password })
   }),
   getProducts: () => authFetch('/products'),
   createProduct: (data) => authFetch('/products', {
@@ -90,12 +95,21 @@ export const api = {
             status
             createdAt
             products {
-              product { title price }
+              product { title price image }
               quantity
             }
           }
         }
       `
     })
-  }, true)
+  }, true),
+  // User Management
+  getUsers: () => authFetch('/users'),
+  updateUserRole: (id, role) => authFetch(`/users/${id}/role`, {
+    method: 'PUT',
+    body: JSON.stringify({ role })
+  }),
+  deleteUser: (id) => authFetch(`/users/${id}`, {
+    method: 'DELETE'
+  })
 };

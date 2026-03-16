@@ -27,15 +27,15 @@
     
     {#if $user}
       <div class="info-group">
-        <label>ID de Usuario</label>
+        <span class="label">ID de Usuario</span>
         <p>{$user.id}</p>
       </div>
       <div class="info-group">
-        <label>Nombre de Usuario</label>
+        <span class="label">Nombre de Usuario</span>
         <p>{$user.username}</p>
       </div>
       <div class="info-group">
-        <label>Rol</label>
+        <span class="label">Rol</span>
         <span class="badge {$user.role === 'admin' ? 'admin' : 'user'}">
           {$user.role.toUpperCase()}
         </span>
@@ -66,13 +66,20 @@
               <div class="order-products">
                 {#each order.products as item}
                   <div class="order-item">
-                    <span>{item.quantity}x {item.product.title}</span>
-                    <span>${(item.product.price * item.quantity).toFixed(2)}</span>
+                    <div class="item-main">
+                      {#if item.product.image}
+                        <img src={item.product.image} alt={item.product.title} class="order-img" />
+                      {:else}
+                        <div class="order-img-placeholder">📦</div>
+                      {/if}
+                      <span>{item.quantity}x {item.product.title}</span>
+                    </div>
+                    <span>{(item.product.price * item.quantity).toFixed(2)} €</span>
                   </div>
                 {/each}
               </div>
               <div class="order-total">
-                <strong>Total:</strong> ${order.total.toFixed(2)}
+                <strong>Total:</strong> {order.total.toFixed(2)} €
               </div>
             </div>
           {/each}
@@ -123,7 +130,7 @@
     border: 1px solid rgba(255, 255, 255, 0.05);
   }
 
-  .info-group label {
+  .info-group .label {
     display: block;
     font-size: 0.85rem;
     color: var(--text-muted);
@@ -218,12 +225,38 @@
   .order-item {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     font-size: 0.9rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.82rem;
     color: var(--text-muted);
   }
   .order-item:last-child {
     margin-bottom: 0;
+  }
+
+  .item-main {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .order-img {
+    width: 32px;
+    height: 32px;
+    object-fit: cover;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.2);
+  }
+
+  .order-img-placeholder {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+    font-size: 1rem;
   }
 
   .order-total {

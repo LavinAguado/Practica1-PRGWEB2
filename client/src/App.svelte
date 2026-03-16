@@ -9,11 +9,18 @@
   import Profile from './pages/Profile.svelte';
   import Cart from './pages/Cart.svelte';
   import Chat from './pages/Chat.svelte';
+  import AdminPanel from './pages/AdminPanel.svelte';
+  import { user as userStore } from './stores/auth.js';
+  import ToastContainer from './components/ToastContainer.svelte';
 
   // Proteger rutas si no hay token (simulado simple de SPA auth guard)
   $effect(() => {
     if (!$token && $currentRoute !== 'login') {
       navigate('login');
+    }
+    // Proteger admin: solo si es admin
+    if ($currentRoute === 'admin' && $userStore?.role !== 'admin') {
+      navigate('products');
     }
   });
 </script>
@@ -34,11 +41,14 @@
       <Cart />
     {:else if $currentRoute === 'chat'}
       <Chat />
+    {:else if $currentRoute === 'admin'}
+      <AdminPanel />
     {:else}
       <!-- Catch all or 404 -->
       <Login />
     {/if}
   </div>
+  <ToastContainer />
 </main>
 
 <style>

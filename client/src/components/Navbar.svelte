@@ -33,6 +33,14 @@
       >
         💬 Chat / Soporte
       </button>
+      {#if isAdmin}
+        <button 
+          class="nav-link {$currentRoute === 'admin' ? 'active' : ''}" 
+          onclick={() => navigate('admin')}
+        >
+          🛡️ Admin
+        </button>
+      {/if}
       <button 
         class="nav-link {$currentRoute === 'profile' ? 'active' : ''}" 
         onclick={() => navigate('profile')}

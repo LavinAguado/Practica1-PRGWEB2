@@ -16,14 +16,14 @@
 <div class="card">
   <div class="card-image">
     {#if product.image}
-      <img src={product.image} alt={product.title} />
+      <img src={product.image} alt={product.title} onerror={() => product.image = ''} />
     {:else}
       <div class="img-placeholder">🛒</div>
     {/if}
   </div>
   <div class="card-content">
     <h3>{product.title}</h3>
-    <p class="price">${product.price}</p>
+    <p class="price">{product.price} €</p>
     <span class="status {product.stock > 0 ? 'active' : 'inactive'}">
       {product.stock > 0 ? `Stock: ${product.stock}` : 'Sin stock'}
     </span>

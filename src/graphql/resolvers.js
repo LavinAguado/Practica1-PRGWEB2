@@ -59,17 +59,17 @@ const resolvers = {
   // ================== MUTATIONS ==================
   Mutation: {
     // -------- PRODUCTS --------
-    createProduct: async (_, { title, price, stock }) => {
-      const product = new Product({ title, price, stock });
+    createProduct: async (_, { title, price, stock, image }) => {
+      const product = new Product({ title, price, stock, image });
       return product.save();
     },
 
-    updateProduct: async (_, { id, title, price, stock }, context) => {
+    updateProduct: async (_, { id, title, price, stock, image }, context) => {
       requireAdmin(context);
 
       return Product.findByIdAndUpdate(
         id,
-        { title, price, stock },
+        { title, price, stock, image },
         { new: true }
       );
     },

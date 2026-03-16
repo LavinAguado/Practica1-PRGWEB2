@@ -13,6 +13,7 @@ const config = require('./config');
 const authRoutes = require('./src/routes/authRoutes');
 const productRoutes = require('./src/routes/productRoutes');
 const chatRoutes = require('./src/routes/chatRoutes');
+const userRoutes = require('./src/routes/userRoutes');
 const { verifySocketToken } = require('./src/middleware/authenticateJWT'); // we'll export helper
 
 const app = express();
@@ -29,6 +30,7 @@ app.use(express.static(path.join(__dirname, 'src', 'public')));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/users', userRoutes);
 app.use('/chat', chatRoutes);
 // Ruta protegida para acceder al chat
 app.get('/chat.html', authenticateJWT, (req, res) => {

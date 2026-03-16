@@ -4,6 +4,7 @@ const typeDefs = `
     title: String!
     price: Float!
     stock: Int!
+    image: String
   }
 
   type OrderProduct {
@@ -41,8 +42,8 @@ const typeDefs = `
   }
 
   type Mutation {
-    createProduct(title: String!, price: Float!, stock: Int!): Product
-    updateProduct(id: ID!, title: String, price: Float, stock: Int): Product
+    createProduct(title: String!, price: Float!, stock: Int!, image: String): Product
+    updateProduct(id: ID!, title: String, price: Float, stock: Int, image: String): Product
     deleteProduct(id: ID!): Boolean
     createOrder(items: [OrderItemInput!]!, userId: ID): Order
     updateOrderStatus(id: ID!, status: String!): Order!
