@@ -1,10 +1,9 @@
-import { get } from 'svelte/store';
-import { token, logout } from '../stores/auth.js';
+import { auth, logout } from '../stores/auth.svelte.js';
 
 const API_URL = 'http://localhost:4000/api';
 
 async function authFetch(endpoint, options = {}, isAbsolute = false) {
-  const currentToken = get(token);
+  const currentToken = auth.token;
   
   const headers = {
     'Content-Type': 'application/json',
@@ -22,7 +21,7 @@ async function authFetch(endpoint, options = {}, isAbsolute = false) {
   });
 
   if (response.status === 401 || response.status === 403) {
-    import('../stores/toast.js').then(m => m.showToast('Sesión expirada o no autorizada', 'error'));
+    import('../stores/toast.svelte.js').then(m => m.showToast('Sesión expirada o no autorizada', 'error'));
     logout();
     throw new Error('Sesión expirada o no autorizada');
   }

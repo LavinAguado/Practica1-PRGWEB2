@@ -1,8 +1,8 @@
 <script>
   import { api } from '../services/api.js';
-  import { login } from '../stores/auth.js';
-  import { navigate } from '../stores/router.js';
-  import { showToast } from '../stores/toast.js';
+  import { login } from '../stores/auth.svelte.js';
+  import { navigate } from '../stores/router.svelte.js';
+  import { showToast } from '../stores/toast.svelte.js';
 
   let isLogin = $state(true);
   let username = $state('');
@@ -47,225 +47,223 @@
   }
 </script>
 
-<div class="login-container">
+<style>
+  .login-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 120px);
+    padding: 2rem;
+    background: radial-gradient(circle at top right, rgba(var(--primary-color-rgb), 0.1), transparent 40%),
+                radial-gradient(circle at bottom left, rgba(var(--primary-color-rgb), 0.05), transparent 40%);
+  }
+
+  .login-card {
+    background: rgba(22, 27, 34, 0.7);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 3rem;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    text-align: center;
+    transition: transform 0.3s ease;
+  }
+
+  :root.light .login-card {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  .login-header h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--primary-color), #8892b0);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .login-header p {
+    color: var(--text-muted);
+    margin-bottom: 2.5rem;
+  }
+
+  .input-group {
+    margin-bottom: 1.5rem;
+    text-align: left;
+  }
+
+  .input-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+    opacity: 0.8;
+  }
+
+  .input-field {
+    width: 100%;
+    padding: 1rem 1.2rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--text-color);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  :root.light .input-field {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .input-field:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.15);
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  .error-box {
+    background: rgba(248, 81, 73, 0.1);
+    color: var(--danger-color);
+    padding: 0.8rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    border: 1px solid rgba(248, 81, 73, 0.2);
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 12px;
+    border: none;
+    background: var(--primary-color);
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+    box-shadow: 0 4px 15px rgba(var(--primary-color-rgb), 0.3);
+  }
+
+  .submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(var(--primary-color-rgb), 0.4);
+    filter: brightness(1.1);
+  }
+
+  .submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .toggle-mode {
+    margin-top: 2rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+
+  .toggle-btn {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0 0.5rem;
+    text-decoration: underline;
+  }
+
+  .toggle-btn:hover {
+    filter: brightness(1.2);
+  }
+</style>
+
+<div class="login-wrapper">
   <div class="login-card">
-    <div class="logo">{isLogin ? '🔐' : '📝'}</div>
-    <h1>{isLogin ? 'Bienvenido' : 'Crear Cuenta'}</h1>
-    <p class="subtitle">
-      {isLogin ? 'Ingresa a tu cuenta para continuar' : 'Regístrate para empezar a comprar'}
-    </p>
+    <div class="login-header">
+      <h1>{isLogin ? '¡Bienvenido!' : 'Crea tu Cuenta'}</h1>
+      <p>{isLogin ? 'Accede a tu portal de productos' : 'Únete a nuestra comunidad hoy'}</p>
+    </div>
 
     {#if errorMsg}
-      <div class="alert error">{errorMsg}</div>
+      <div class="error-box">
+        {errorMsg}
+      </div>
     {/if}
 
     <form onsubmit={handleSubmit}>
       {#if !isLogin}
-        <div class="form-group">
-          <label for="username">Nombre de usuario</label>
+        <div class="input-group">
+          <label class="input-label" for="username">Nombre de Usuario</label>
           <input 
-            id="username" 
             type="text" 
+            id="username"
+            class="input-field"
             bind:value={username} 
+            placeholder="JohnDoe"
             required 
-            placeholder="Usuario123"
           />
         </div>
       {/if}
 
-      <div class="form-group">
-        <label for="email">Email</label>
+      <div class="input-group">
+        <label class="input-label" for="email">E-mail</label>
         <input 
-          id="email" 
           type="email" 
+          id="email"
+          class="input-field"
           bind:value={email} 
+          placeholder="ejemplo@correo.com"
           required 
-          placeholder="email@ejemplo.com"
         />
       </div>
-      
-      <div class="form-group">
-        <label for="password">Contraseña</label>
+
+      <div class="input-group">
+        <label class="input-label" for="password">Contraseña</label>
         <input 
-          id="password" 
           type="password" 
+          id="password"
+          class="input-field"
           bind:value={password} 
-          required 
           placeholder="••••••••"
+          required 
         />
       </div>
 
       {#if !isLogin}
-        <div class="form-group">
-          <label for="confirmPassword">Confirmar Contraseña</label>
+        <div class="input-group">
+          <label class="input-label" for="confirmPassword">Confirmar Contraseña</label>
           <input 
-            id="confirmPassword" 
             type="password" 
+            id="confirmPassword"
+            class="input-field"
             bind:value={confirmPassword} 
-            required 
             placeholder="••••••••"
+            required 
           />
         </div>
       {/if}
 
-      <button type="submit" disabled={loading} class="btn-primary">
-        {#if loading}
-          <span class="spinner"></span> {isLogin ? 'Iniciando...' : 'Creando cuenta...'}
-        {:else}
-          {isLogin ? 'Iniciar Sesión' : 'Registrarse'}
-        {/if}
+      <button type="submit" class="submit-btn" disabled={loading}>
+        {loading ? 'Procesando...' : (isLogin ? 'Entrar' : 'Registrarse')}
       </button>
     </form>
 
     <div class="toggle-mode">
-      <span>{isLogin ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}</span>
-      <button class="link-btn" onclick={toggleMode}>
+      {isLogin ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}
+      <button class="toggle-btn" onclick={toggleMode}>
         {isLogin ? 'Regístrate aquí' : 'Inicia sesión'}
       </button>
     </div>
   </div>
 </div>
-
-<style>
-  .login-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: calc(100vh - 80px);
-    padding: 1rem;
-  }
-
-  .login-card {
-    background: var(--surface-color);
-    padding: 2.5rem 2rem;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    width: 100%;
-    max-width: 400px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    text-align: center;
-  }
-
-  .logo {
-    font-size: 3rem;
-    margin-bottom: 0.5rem;
-  }
-
-  h1 {
-    margin: 0;
-    font-size: 1.8rem;
-    color: var(--text-color);
-  }
-
-  .subtitle {
-    color: var(--text-muted);
-    margin-bottom: 2rem;
-    font-size: 0.95rem;
-  }
-
-  .form-group {
-    text-align: left;
-    margin-bottom: 1.5rem;
-  }
-
-  label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    font-size: 0.9rem;
-    color: var(--text-color);
-  }
-
-  input {
-    width: 100%;
-    padding: 0.8rem 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.2);
-    color: var(--text-color);
-    font-size: 1rem;
-    transition: border-color 0.2s;
-  }
-
-  input:focus {
-    outline: none;
-    border-color: var(--primary-color);
-  }
-
-  .btn-primary {
-    width: 100%;
-    padding: 0.8rem;
-    border: none;
-    border-radius: 8px;
-    background: var(--primary-color);
-    color: #fff;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: transform 0.1s, background 0.2s;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    background: var(--primary-hover);
-    transform: translateY(-2px);
-  }
-
-  .btn-primary:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-
-  .alert.error {
-    background: rgba(255, 71, 87, 0.1);
-    color: #ff4757;
-    padding: 0.8rem;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-    border: 1px solid rgba(255, 71, 87, 0.2);
-    font-size: 0.9rem;
-  }
-
-  .spinner {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255,255,255,0.3);
-    border-radius: 50%;
-    border-top-color: #fff;
-    animation: spin 1s ease-in-out infinite;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  .toggle-mode {
-    margin-top: 1.5rem;
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .link-btn {
-    background: none;
-    border: none;
-    color: var(--primary-color);
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 0.9rem;
-    padding: 0;
-    transition: filter 0.2s;
-  }
-
-  .link-btn:hover {
-    filter: brightness(1.2);
-    text-decoration: underline;
-  }
-</style>

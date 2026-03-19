@@ -2,13 +2,42 @@
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   color-scheme: light dark;
+  --primary-color-rgb: 88, 166, 255; /* Default fallback */
+}
+
+:root.dark {
   --bg-color: #0d1117;
   --surface-color: #161b22;
   --text-color: #c9d1d9;
   --text-muted: #8b949e;
   --primary-color: #58a6ff;
+  --primary-color-rgb: 88, 166, 255;
+  --primary-hover: #3182ce;
+  --danger-color: #f85149;
+  --success-color: #2ea043;
+}
+
+:root.light {
+  --bg-color: #f0f2f5;
+  --surface-color: #ffffff;
+  --text-color: #1f2328;
+  --text-muted: #636c76;
+  --primary-color: #0969da;
+  --primary-color-rgb: 9, 105, 218;
+  --primary-hover: #085cc1;
+  --danger-color: #cf222e;
+  --success-color: #1a7f37;
+}
+
+/* Default to dark if no class is present or for smooth transition */
+:root:not(.light) {
+  --bg-color: #0d1117;
+  --surface-color: #161b22;
+  --text-color: #c9d1d9;
+  --text-muted: #8b949e;
+  --primary-color: #58a6ff;
+  --primary-color-rgb: 88, 166, 255;
   --primary-hover: #3182ce;
   --danger-color: #f85149;
   --success-color: #2ea043;
@@ -22,6 +51,7 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #app {

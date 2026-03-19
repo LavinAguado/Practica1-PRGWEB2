@@ -1,18 +1,20 @@
 <script>
-  import { toasts, dismissToast } from '../stores/toast.js';
+  import { toastState } from '../stores/toast.svelte.js';
   import { flip } from 'svelte/animate';
   import { fly } from 'svelte/transition';
 </script>
 
 <div class="toast-container">
-  {#each $toasts as t (t.id)}
+  {#each toastState.toasts as t (t.id)}
     <div 
       class="toast {t.type}" 
       animate:flip={{duration: 300}}
       transition:fly={{ y: 20, duration: 300 }}
     >
       <span class="message">{t.message}</span>
-      <button class="close-btn" onclick={() => dismissToast(t.id)} aria-label="Cerrar">✕</button>
+      <button class="close-btn" onclick={() => {
+        toastState.toasts = toastState.toasts.filter(toast => toast.id !== t.id);
+      }} aria-label="Cerrar">✕</button>
     </div>
   {/each}
 </div>

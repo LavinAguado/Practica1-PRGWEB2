@@ -1,12 +1,14 @@
 <script>
-  import { currentRoute, navigate } from '../stores/router.js';
-  import { user, logout } from '../stores/auth.js';
-  import { cart } from '../stores/cart.js';
+  import { router, navigate } from '../stores/router.svelte.js';
+  import { auth, logout } from '../stores/auth.svelte.js';
+  import { cartState } from '../stores/cart.svelte.js';
+  import { themeState, toggleTheme } from '../stores/theme.svelte.js';
 
   // $derived() – computed values from reactive state
-  let totalItems = $derived($cart.reduce((sum, item) => sum + item.quantity, 0));
-  let userDisplayName = $derived($user?.username ?? 'Usuario');
-  let isAdmin = $derived($user?.role === 'admin');
+  let totalItems = $derived(cartState.items.reduce((sum, item) => sum + item.quantity, 0));
+  let userDisplayName = $derived(auth.user?.username ?? 'Usuario');
+  let isAdmin = $derived(auth.user?.role === 'admin');
+  let themeEmoji = $derived(themeState.current === 'dark' ? '🌙' : '☀️');
 
   function handleLogout() {
     logout();
@@ -18,37 +20,42 @@
   <div class="nav-brand">
     <h2>🛍️ Portal Productos</h2>
   </div>
+  <div class="nav-theme">
+    <button class="theme-btn" onclick={toggleTheme} title="Cambiar tema">
+      {themeEmoji}
+    </button>
+  </div>
   <div class="nav-links">
-    {#if $user}
+    {#if auth.user}
       <span class="user-greeting">Hola, <strong>{userDisplayName}</strong>{#if isAdmin} <span class="role-tag">ADMIN</span>{/if}</span>
       <button 
-        class="nav-link {$currentRoute === 'products' ? 'active' : ''}" 
+        class="nav-link {router.current === 'products' ? 'active' : ''}" 
         onclick={() => navigate('products')}
       >
         Productos
       </button>
       <button 
-        class="nav-link {$currentRoute === 'chat' ? 'active' : ''}" 
+        class="nav-link {router.current === 'chat' ? 'active' : ''}" 
         onclick={() => navigate('chat')}
       >
         💬 Chat / Soporte
       </button>
       {#if isAdmin}
         <button 
-          class="nav-link {$currentRoute === 'admin' ? 'active' : ''}" 
+          class="nav-link {router.current === 'admin' ? 'active' : ''}" 
           onclick={() => navigate('admin')}
         >
           🛡️ Admin
         </button>
       {/if}
       <button 
-        class="nav-link {$currentRoute === 'profile' ? 'active' : ''}" 
+        class="nav-link {router.current === 'profile' ? 'active' : ''}" 
         onclick={() => navigate('profile')}
       >
         Mi Perfil
       </button>
       <button 
-        class="nav-link {$currentRoute === 'cart' ? 'active' : ''}" 
+        class="nav-link {router.current === 'cart' ? 'active' : ''}" 
         onclick={() => navigate('cart')}
       >
         🛒 Carrito {#if totalItems > 0}<span class="cart-badge">{totalItems}</span>{/if}
@@ -56,7 +63,7 @@
       <button class="nav-link logout-btn" onclick={handleLogout}>Cerrar Sesión</button>
     {:else}
       <button 
-        class="nav-link {$currentRoute === 'login' ? 'active' : ''}" 
+        class="nav-link {router.current === 'login' ? 'active' : ''}" 
         onclick={() => navigate('login')}
       >
         Login
@@ -70,13 +77,19 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 2rem;
-    background: rgba(255, 255, 255, 0.05);
+    padding: 0.75rem 2rem;
+    background: rgba(var(--surface-color-rgb, 22, 27, 34), 0.8);
     backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     position: sticky;
     top: 0;
     z-index: 100;
+  }
+
+  :root.light .navbar {
+    background: rgba(255, 255, 255, 0.8);
+    border-bottom-color: rgba(0, 0, 0, 0.05);
   }
   
   .nav-brand h2 {
@@ -158,5 +171,38 @@
       gap: 1rem;
       padding: 1rem;
     }
+  }
+  .nav-theme {
+    margin: 0 1rem;
+    display: flex;
+    align-items: center;
+  }
+
+  .theme-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+  }
+
+  :root.light .theme-btn {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .theme-btn:hover {
+    transform: scale(1.1);
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  :root.light .theme-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
   }
 </style>

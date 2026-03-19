@@ -1,9 +1,9 @@
 <script>
   import { onMount } from "svelte";
   import { api } from "../services/api.js";
-  import { user } from "../stores/auth.js";
-  import { addToCart } from "../stores/cart.js";
-  import { showToast } from "../stores/toast.js";
+  import { auth } from "../stores/auth.svelte.js";
+  import { cartState, addToCart } from "../stores/cart.svelte.js";
+  import { showToast } from "../stores/toast.svelte.js";
   import ProductCard from "../components/ProductCard.svelte";
   import ProductForm from "../components/ProductForm.svelte";
 
@@ -44,13 +44,13 @@
 
   let productCount = $derived(products.length);
   let filteredCount = $derived(filteredProducts.length);
-  let isAdmin = $derived($user?.role === "admin");
+  let isAdmin = $derived(auth.user?.role === "admin");
 
   // --- $effect() for side-effects ---
   // Re-load products whenever the user role changes (e.g login/logout swap)
   $effect(() => {
-    const role = $user?.role; // track the role
-    if ($user) {
+    const role = auth.user?.role; // track the role
+    if (auth.user) {
       loadProducts();
     }
   });
@@ -145,11 +145,11 @@
     if (selectedQuantities[id] < max) selectedQuantities[id]++;
   }
 
-  function decQty(id) {
+  function handleDecQty(id) {
     if (selectedQuantities[id] > 1) selectedQuantities[id]--;
   }
 
-  function handleAddToCart(p) {
+  function handleAddToCartAction(p) {
     const qty = selectedQuantities[p._id];
     addToCart(p, qty);
   }
@@ -210,8 +210,8 @@
           onEdit={openEdit}
           onDelete={handleDelete}
           onIncQty={incQty}
-          onDecQty={decQty}
-          onAddToCart={handleAddToCart}
+          onDecQty={handleDecQty}
+          onAddToCart={() => handleAddToCartAction(p)}
         />
       {/each}
     </div>

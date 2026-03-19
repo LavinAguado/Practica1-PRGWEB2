@@ -1,15 +1,18 @@
-import { writable } from 'svelte/store';
+// router.svelte.js
+// Modern Svelte 5 state using $state()
 
-// Default to login, but if the URL has a path, use it.
 const initialPath = window.location.pathname.replace('/', '') || 'login';
-export const currentRoute = writable(initialPath);
+
+export const router = $state({
+  current: initialPath
+});
 
 export function navigate(route) {
-  currentRoute.set(route);
+  router.current = route;
   window.history.pushState({}, '', '/' + route);
 }
 
 window.addEventListener('popstate', () => {
   const path = window.location.pathname.replace('/', '') || 'login';
-  currentRoute.set(path);
+  router.current = path;
 });

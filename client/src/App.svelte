@@ -1,7 +1,8 @@
 <script>
   import { onMount } from 'svelte';
-  import { currentRoute, navigate } from './stores/router.js';
-  import { token } from './stores/auth.js';
+  import { router, navigate } from './stores/router.svelte.js';
+  import { auth } from './stores/auth.svelte.js';
+  import { updateDocumentTheme } from './stores/theme.svelte.js';
 
   import Navbar from './components/Navbar.svelte';
   import Login from './pages/Login.svelte';
@@ -10,43 +11,49 @@
   import Cart from './pages/Cart.svelte';
   import Chat from './pages/Chat.svelte';
   import AdminPanel from './pages/AdminPanel.svelte';
-  import { user as userStore } from './stores/auth.js';
   import ToastContainer from './components/ToastContainer.svelte';
+  import { fade } from 'svelte/transition';
+
+  onMount(() => {
+    updateDocumentTheme();
+  });
 
   // Proteger rutas si no hay token (simulado simple de SPA auth guard)
   $effect(() => {
-    if (!$token && $currentRoute !== 'login') {
+    if (!auth.token && router.current !== 'login') {
       navigate('login');
     }
     // Proteger admin: solo si es admin
-    if ($currentRoute === 'admin' && $userStore?.role !== 'admin') {
+    if (router.current === 'admin' && auth.user?.role !== 'admin') {
       navigate('products');
     }
   });
 </script>
 
 <main>
-  {#if $token}
-    <Navbar />
-  {/if}
+  <Navbar />
 
   <div class="content">
-    {#if $currentRoute === 'login'}
-      <Login />
-    {:else if $currentRoute === 'products'}
-      <Products />
-    {:else if $currentRoute === 'profile'}
-      <Profile />
-    {:else if $currentRoute === 'cart'}
-      <Cart />
-    {:else if $currentRoute === 'chat'}
-      <Chat />
-    {:else if $currentRoute === 'admin'}
-      <AdminPanel />
-    {:else}
-      <!-- Catch all or 404 -->
-      <Login />
-    {/if}
+    {#key router.current}
+      <div in:fade={{ duration: 300, delay: 100 }}>
+        {#if router.current === 'login'}
+          <Login />
+        {:else if router.current === 'products'}
+          <Products />
+        {:else if router.current === 'profile'}
+          <Profile />
+        {:else if router.current === 'cart'}
+          <Cart />
+        {:else if router.current === 'chat'}
+          <Chat />
+        {:else if router.current === 'admin'}
+          <AdminPanel />
+        {:else}
+          <!-- Catch all or 404 -->
+          <Login />
+        {/if}
+      </div>
+    {/key}
   </div>
   <ToastContainer />
 </main>

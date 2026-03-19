@@ -1,13 +1,13 @@
 <script>
   import { onMount } from 'svelte';
-  import { user } from '../stores/auth.js';
+  import { auth } from '../stores/auth.svelte.js';
   import { api } from '../services/api.js';
 
   let orders = $state([]);
   let loadingOrders = $state(true);
 
   onMount(async () => {
-    if ($user) {
+    if (auth.user) {
       try {
         const res = await api.getMyOrders();
         orders = res.data.myOrders || [];
@@ -25,19 +25,19 @@
     <div class="avatar">👤</div>
     <h2>Mi Perfil</h2>
     
-    {#if $user}
+    {#if auth.user}
       <div class="info-group">
         <span class="label">ID de Usuario</span>
-        <p>{$user.id}</p>
+        <p>{auth.user.id}</p>
       </div>
       <div class="info-group">
         <span class="label">Nombre de Usuario</span>
-        <p>{$user.username}</p>
+        <p>{auth.user.username}</p>
       </div>
       <div class="info-group">
         <span class="label">Rol</span>
-        <span class="badge {$user.role === 'admin' ? 'admin' : 'user'}">
-          {$user.role.toUpperCase()}
+        <span class="badge {auth.user.role === 'admin' ? 'admin' : 'user'}">
+          {auth.user.role.toUpperCase()}
         </span>
       </div>
     {:else}
@@ -45,7 +45,7 @@
     {/if}
   </div>
 
-  {#if $user}
+  {#if auth.user}
     <div class="orders-section">
       <h2>Mis Pedidos</h2>
       {#if loadingOrders}

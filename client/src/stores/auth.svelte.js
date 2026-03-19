@@ -1,22 +1,24 @@
-import { writable } from 'svelte/store';
+// auth.svelte.js
+// Modern Svelte 5 state using $state()
 
-// Restore from localStorage if exists
 const initialToken = localStorage.getItem('token') || '';
 const initialUser = JSON.parse(localStorage.getItem('user') || 'null');
 
-export const token = writable(initialToken);
-export const user = writable(initialUser);
+export const auth = $state({
+  token: initialToken,
+  user: initialUser
+});
 
 export function login(newToken, newUser) {
-  token.set(newToken);
-  user.set(newUser);
+  auth.token = newToken;
+  auth.user = newUser;
   localStorage.setItem('token', newToken);
   localStorage.setItem('user', JSON.stringify(newUser));
 }
 
 export function logout() {
-  token.set('');
-  user.set(null);
+  auth.token = '';
+  auth.user = null;
   localStorage.removeItem('token');
   localStorage.removeItem('user');
 }

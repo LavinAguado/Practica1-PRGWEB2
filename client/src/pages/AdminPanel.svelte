@@ -1,8 +1,8 @@
 <script>
   import { onMount } from 'svelte';
   import { api } from '../services/api.js';
-  import { user as userStore } from '../stores/auth.js';
-  import { showToast } from '../stores/toast.js';
+  import { auth } from '../stores/auth.svelte.js';
+  import { showToast } from '../stores/toast.svelte.js';
 
   let users = $state([]);
   let loading = $state(true);
@@ -86,7 +86,7 @@
               <td>
                 <div class="user-info">
                   <span class="avatar">{u.username[0].toUpperCase()}</span>
-                  <span class="username">{u.username} {u._id === $userStore?.id ? '(Tú)' : ''}</span>
+                  <span class="username">{u.username} {u._id === auth.user?.id ? '(Tú)' : ''}</span>
                 </div>
               </td>
               <td>{u.email}</td>
@@ -101,7 +101,7 @@
                   <button 
                     class="btn btn-secondary btn-sm" 
                     onclick={() => toggleRole(u)}
-                    disabled={u._id === $userStore?.id}
+                    disabled={u._id === auth.user?.id}
                     title="Cambiar Rol"
                   >
                     🔄 Rol
@@ -109,7 +109,7 @@
                   <button 
                     class="btn btn-danger btn-sm" 
                     onclick={() => handleDelete(u)}
-                    disabled={u._id === $userStore?.id}
+                    disabled={u._id === auth.user?.id}
                     title="Eliminar Usuario"
                   >
                     🗑️ Borrar
